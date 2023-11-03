@@ -17,6 +17,10 @@
     - [Removing links](#removing-links)
   - [Archiving files](#archiving-files)
   - [Compressing files](#compressing-files)
+- [Working with Text Files](#working-with-text-files)
+  - [Common file related tools](#common-file-related-tools)
+  - [Finding Text in a file](#finding-text-in-a-file)
+  - [Advanced Text Processors](#advanced-text-processors)
 
 # RHEL 8 - EX200
 
@@ -164,4 +168,48 @@
 - `gunzip` and `bunzip2` are used to decompress the files
 - `tar -zcvf archive.tar.gz file1 file2` -> **Create** archive with files with verbosity and compress using gzip
 - `tar -jcvf archive.tar.bz2 file1 file2` -> **Create** archive with files with verbosity and compress using bzip2
+
+# Working with Text Files
+
+## Common file related tools
+- `less`    -> Displays the contents of a file, but it doesn't load the entire file into memory. It loads the file in chunks.
+  - Navingation is pretty similar to `vim`
+- `cat`     -> Displays the contents of a file, but it loads the entire file into memory.
+  - `tac`  -> Displays the contents of a file in **reverse** order
+- `head`    -> Displays the **first** 10 lines of a file
+  - `head -f /var/log/messages` -> Displays the **first** 10 lines of a file and keeps on updating the output as the file grows.
+  - `head -n 5 /etc/passwd`     -> Displays only the first 5 lines
+- `tail`    -> Displays the **last** 10 lines of a file
+  - `tail -f /var/log/messages` -> Displays the **last** 10 lines of a file and keeps on updating the output as the file grows
+  - `tail -n 5 /etc/passwd`     -> Displays last 5 lines
+- `cut`     -> Displays a specific column of a file
+  - `cut -f 1 -d : /etc/passwd` -> Displays the first column of the file, where `-f` is the field and `-d` is the delimiter
+  - we can use `$'\t'` for tab as delimiter
+- `sort`    -> Sorts the contents of a file, default it sorts in ascending order
+  - `sort -r` -> Sorts in descending order
+  - `sort -n` -> Sorts numerically
+  - `sort -k 3` -> Sorts based on the third column
+  - `sort -t : -k 3` -> Sorts based on the third column and the delimiter is `:`
+- `wc`      -> Displays the number of lines, words and characters in a file
+
+## Finding Text in a file
+- `grep`    -> Searches for a pattern in a file
+  - `grep -i` -> Ignores case
+  - `grep -v` -> Inverts the match
+  - `grep -r` -> searches files in the current directory and all sub directories
+  - `grep -w` -> Searches for whole words
+  - `grep -c` -> Displays the count of matches
+  - `grep -E` -> Uses extended regular expressions, which allows us to use `|` and `()`
+  - `grep -e` -> matches multiple regular expressions
+
+- We can also use anchors with grep similarly wildcards can also be used
+  - `grep ^root /etc/passwd` -> Searches for lines starting with root
+  - `grep root$ /etc/passwd` -> Searches for lines ending with root
+
+## Advanced Text Processors
+- `awk` 
+  - `awk -F : '{print $1}' /etc/passwd` -> Prints the first column of the file, where `-F` is the field and `:` is the delimiter
+- `sed`
+  - `sed -i -e '2d' /etc/passwd` -> Deletes the second line of the file
+  - `sed -i -e '2d;20,25d' /etc/passwd` -> Deletes the second line and lines 20 to 25 of the file
 
