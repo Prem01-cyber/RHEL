@@ -9,6 +9,8 @@
 
 `ls -l`       -> list files in long format
 
+- If a file a symbolic link the first charater is an **1** else if it is a hard link the number is **3**
+
 `ls -a `      -> list all files including hidden files
 
 `ls -la`      -> list all files in long format including hidden files
@@ -18,6 +20,10 @@
 `ls -lS`      -> list all files in long format sorted by file size
 
 `ls -ltr`     -> list all files in long format sorted by time in reverse order
+
+`ls -d`      -> list directories
+
+`ls -R`      -> list directories recursively, but `-r` is different unlike `mv` and `cp`
 
 ## Creating Files 
 `touch`               -> create empty file. It also replaces the timestamp of the file if the file already exists.
@@ -58,7 +64,7 @@
 
 `rmdir -p`   -> remove parent directories as needed
 
-`rm -rf`     -> remove directory and files recursively and forcefully eventhough if they are not empty.
+`rm -rf`     -> remove directory and files recursively and forcefully eventhough if they are not empty. or `-Rf` does the same too
 
 `mv`        -> move or rename file or directory
 
@@ -68,7 +74,7 @@
 
 `cp -i`     -> copy file or directory and prompt before overwriting
 
-`cp -r`     -> copy directory recursively
+`cp -r`     -> copy directory recursively or `-R` does the same too
 
 `cp -a`     -> copy directory recursively and preserve all attributes
 

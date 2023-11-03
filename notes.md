@@ -8,6 +8,15 @@
     - [Man Pages](#man-pages)
   - [info](#info)
   - [Documentation Pages](#documentation-pages)
+- [File Management](#file-management)
+  - [Mount Command](#mount-command)
+  - [Links](#links)
+    - [Hard Links](#hard-links)
+    - [Soft Links or Symbolic Links](#soft-links-or-symbolic-links)
+    - [Creating links](#creating-links)
+    - [Removing links](#removing-links)
+  - [Archiving files](#archiving-files)
+  - [Compressing files](#compressing-files)
 
 # RHEL 8 - EX200
 
@@ -88,3 +97,71 @@
 - `/usr/share/doc` - Contains documentation for installed packages
 - These are available in particular services and larger systems that are bit more complicated
 - For instance, `rsyslog`, `bind`, `Kerberos`, `OpenSSl`
+
+# File Management
+- [File System Structure](./File_system.md)
+- File selection wildcards
+  - `*` - Wildcard - Matches any number of characters
+  - `?` - Wildcard - Matches any single character
+  - `[]` - Wildcard - Matches any single character within the brackets
+- Paths
+  - absolute path - `/home/user1`
+  - relative path - `./user1` or `../user1`
+- [Working with files and directories](./Working_with_files_and_directories.md)
+
+
+## Mount Command
+- `mount` command gives overview of all mounted devices and also allows us to mount new devices
+- The output of the `mount` command is based on `/proc/mounts` file, where keranel keeps information about mounted devices
+  - `df -Th`    -> Gives a better overview of the mounted devices, where `-T` gives the file system type
+  - `findmnt`   -> shows the relationship between mounts
+
+## Links
+- Linux stores information in the form of **inodes**, which are unique identifiers for files and directories. It contains
+  - the **data block** where the file contents are stored
+  - CAM dates
+  - permissions
+  - file owners
+
+- A file can have multiple names, which are called links
+
+### Hard Links
+- Hard links are just another name for the same file
+- Basically when we create a file we are creating a hard link
+- Hard links can't be created for directories and files on different file systems
+- They must exist on same partition of logical volume
+- In linux file system multiple hard links can be created for a single file
+- If we delete a hard link, the file still exists as long as there is atleast one hard link to it
+
+### Soft Links or Symbolic Links
+- Soft links are just pointers to the original file, they are not the same file
+- Unlike hard links soft links can link to files on other devices
+- The symbolic link becomes invalid if the original file is deleted
+
+### Creating links
+- `ln` command is used to create links (Hard link by default)
+- `ln -s` is used to create soft links
+
+### Removing links
+- Removing links can be dangerous especially the soft links
+- Never use `-f` or `-r` options with `rm` command while removing links
+
+## Archiving files
+- `tar` -> Tape Archive, stores multiple files in a single file. It doesn't actually compress.
+- `tar -cvf archive.tar file1 file2` -> **Create** archive withf iles with verbosity
+- `tar -rvf archive.tar file3` -> **Append** file3 to archive with verbosity
+- `tar -uvf archive.tar file4` -> **Update** file4 in archive with verbosity
+
+- there is a significant difference between update and append in tar. 
+- if we add an existing file to the archive append will create a new copy of the file, whereas update will update the existing file in the archive based on the timestamp.
+
+- `tar -tvf archive.tar` -> **List** files in archive with verbosity
+- `tar -xvf archive.tar` -> **Extract** files from archive with verbosity
+- `tar -xvf archive.tar -C /tmp` -> **Extract** files from archive to a specific directory with verbosity
+
+## Compressing files
+- `gzip` -> GNU zip, compresses a single file. `bzip2` is an alternate
+- `gunzip` and `bunzip2` are used to decompress the files
+- `tar -zcvf archive.tar.gz file1 file2` -> **Create** archive with files with verbosity and compress using gzip
+- `tar -jcvf archive.tar.bz2 file1 file2` -> **Create** archive with files with verbosity and compress using bzip2
+

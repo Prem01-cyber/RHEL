@@ -44,6 +44,8 @@
   - **.bash_logout** -> Contains commands that are executed when a user logs out.
   - **.bashrc** -> Contains bash shell specific commands.
 
+- We can mount home directory of users with specific options, for instance **noexec** and **nodev** would prevent users from executing binaries and mounting devices respectively.
+
 ## Root Directory
 - **anaconda-ks.cfg** -> Contains the kickstart file. Which is used for kickstart installation. It can also be created manually. It is also used for installing multiple systems at once with similar configuration.
 - **original-ks.cfg** -> Contains the original kickstart file.
