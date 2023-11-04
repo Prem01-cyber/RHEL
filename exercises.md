@@ -11,6 +11,10 @@
   - [Exercise 5-5](#exercise-5-5)
 - [Chapter 6: User and Group management](#chapter-6-user-and-group-management)
   - [Exercise 6-1](#exercise-6-1)
+- [Chapter 7: Permissions Managment](#chapter-7-permissions-managment)
+  - [Exercise 7-1](#exercise-7-1)
+  - [Exercise 7-2](#exercise-7-2)
+  - [Exercise 7-3](#exercise-7-3)
 
 # Chapter2: Using essential tools
 ## Exercise 2-1
@@ -42,3 +46,13 @@
 # Chapter 6: User and Group management
 ## Exercise 6-1
 ![Exercise 6-1](./assets/Screenshot%20from%202023-11-04%2010-16-15.png)
+
+# Chapter 7: Permissions Managment
+## Exercise 7-1
+![Exercise 7-1](assets/Screenshot%20from%202023-11-04%2016-12-33.png)
+
+## Exercise 7-2
+![Exercise 7-2](assets/Screenshot%20from%202023-11-04%2016-36-03.png)
+
+## Exercise 7-3
+![Exercise 7-3](assets/Screenshot%20from%202023-11-04%2017-49-39.png)

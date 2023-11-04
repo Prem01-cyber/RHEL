@@ -40,6 +40,13 @@
   - [Group accounts](#group-accounts)
     - [Creating groups](#creating-groups)
     - [Modifying groups](#modifying-groups)
+- [Permissions Manangement](#permissions-manangement)
+  - [Managing file ownership](#managing-file-ownership)
+  - [Managing permissions](#managing-permissions)
+  - [Managing Advanced Permissions](#managing-advanced-permissions)
+  - [Manging ACL](#manging-acl)
+  - [Default permissions with umask](#default-permissions-with-umask)
+  - [User Extended Attributes](#user-extended-attributes)
 
 # RHEL 8 - EX200
 
@@ -467,3 +474,121 @@
 
 - `groupmems` is a convinient way to list the members of a group
   - `groupmems -g sales -l` -> Lists the members of the group sales
+
+# Permissions Manangement
+- `ls -l` -> Displays the permissions of a file
+  - `-rw-r--r--. 1 root root 0 Nov  4 11:25 file1`
+    - `-` -> File type
+    - `rw-` -> **Owner** permissions
+    - `r--` -> **Group** permissions
+    - `r--` -> **Other** permissions
+    - `.` -> SELinux context
+    - `1` -> Number of hard links
+    - `root` -> Owner
+    - `root` -> Group
+    - `0` -> File size
+    - `Nov  4 11:25` -> Last modified
+    - `file1` -> File name
+
+- Permissions are basically gives when a file is created by the user
+- To determine whethere you have permission to access the file the shell checks its ownership
+  1. if the user is the owner of the file
+  2. if the user obtained any permissions through ACL
+  3. if you are the respective group owner of the file
+  4. if the group has any permissions through ACL
+  5. if above all are not satisfied then the other permissions are checked
+
+- We can use `find` command to list all files that a particular user has ownership with
+  - `find / -user user1` -> Lists all files that user1 has ownership with
+
+## Managing file ownership
+- `chown` command is used to change the ownership of a file
+  - `chown user1 file1`           -> Changes the ownership of file1 to user1
+  - `chown user1:group1 file1`    -> Changes the ownership of file1 to user1 and group1
+  - `chown -R user1:group1 /tmp`  -> Changes the ownership of all files in /tmp to user1 and group1 recursively
+
+- `chgrp` is used to change the group ownership of a file
+  - `chgrp group1 file1`          -> Changes the group ownership of file1 to group1
+
+- `newgrp` is used to change the **primary group** of a user **temporarily**
+  - `newgrp group1` -> Changes the primary group of the user to group1
+  - `exit`          -> Exits the newgrp session and returns to the original primary group setting
+
+## Managing permissions
+- there are three main permissions read - `r`, write - `w` and execute - `x`
+- file - read (open), write (modify), execute (run)
+- directory - read (list), write (create, delete, rename), execute (cd)
+
+- These can be applied to files or directories using `chmod` command
+  - `chmod u+x file1` -> Adds execute permission to the owner of the file
+  - `chmod 755 file1` -> Adds r, w and e permission to the owner and read and execute permission to the group and others
+  - `chmod -R o+rx /tmp` -> Adds read and execute permission to others recursively
+  - `chmod -R o+rX /tmp` -> Adds read permission to others recursively, but only to directories
+
+- Once permissions are modified access by the users will be changed likewise
+
+## Managing Advanced Permissions
+- `setuid` - u+s -> Sets the user id, which means the file will be executed as the owner of the file
+  - ![setuid](./assets/Screenshot%20from%202023-11-04%2016-25-08.png)
+  - while changing the password user gains temporary root permissions to write it to the shadow file
+
+- `setgid` - g+s -> Sets the group id, which means the file will be executed as the group of the file
+  - If applied to an executable file, it gives the user who executes the file the permissions of the group owner.
+  - When applied to a directory we can use it to set default group ownership on file and sub dirs created in that directory
+  - ![setgid](./assets/Screenshot%20from%202023-11-04%2016-36-03.png)
+  - in the above image when creating a new file after setting the setgid bit, the group ownership is set to the group of the directory
+
+- `sticky` - +t  -> Sticky bit, which means only the owner of the file can delete the file
+  - the file was allowed to be deleted because linda and laura were the same group
+
+## Manging ACL
+- We can use ACL to assign more than one user or one group on the same file, but not all utilities support ACL
+- So we might loose ACL settings while moving or coping files and backup utilities might not backup ACL settings
+- `getfacl` -> Displays the ACL settings of a file
+  - `getfacl -R /directory > file.acls` -> Backs up the ACL settings of a directory
+  - `setfacl --restore=file.acl`        -> Restores the ACL settings of a directory
+
+- `setfacl` -> Sets the ACL settings of a file
+  - `setfacl -m u:user1:rw file1`     -> Adds read and write permissions to user1
+  - `setfacl -m g:group1:rw file1`    -> Adds read and write permissions to group1
+  - `setfacl -m d:u:user1:rw file1`   -> Adds default read and write permissions to user1
+  - `setfacl -m d:g:group1:rw file1`  -> Adds default read and write permissions to group1
+
+- `ls -l` doesn't show ACL settings, we need to use `getfacl` 
+- while assigning default ACLs it might be a good idea to remove the existing ACLs
+  - `setfacl -b file1` -> Removes all ACLs from file1
+- likely mixing ACLs and standard permissions can be confusing, so it's better to use one or the other
+- Applying default ACLs to directory might cause problems. To avoid problems it's better to set regular permisssions first and then apply default ACLs
+
+- We need to enable ACL on a file system to use ACL
+  - `mount -o remount,acl /` -> Enables ACL on the root file system
+  - `mount | grep acl` -> Displays the file systems that have ACL enabled
+  - alternatively we need to specify this options in `/etc/fstab` file to make the changes permanent
+
+## Default permissions with umask
+- `umask` -> User mask, is a value that is **subtracted** from the default permissions
+  - the maximum setting for **file** permissions is **666** and for **directories** it's **777**
+  - default umask setting is **0022**, which means the default permissions for files is **644** and for directories it's **755**
+  - we can check the default umask setting using `umask` command
+
+- `umask` is set in `/etc/profile` file to make it permanent, which is a system wide configuration file
+- the ideal way is to create a script named **umask.sh** in `/etc/profile.d` directory, which is a system wide configuration directory
+- if we do not intend to use ACLs then we can use `umask` to set default permissions
+
+## User Extended Attributes
+- `lsattr` -> Displays the attributes of a file
+- `chattr` -> Sets the attributes of a file
+  - `chattr +i file1` -> Sets the immutable attribute of a file, which means the file can't be modified or deleted
+  - `chattr -i file1` -> Removes the immutable attribute of a file
+  - `chattr +a file1` -> Sets the append only attribute of a file, which means the file can't be modified, but can be deleted
+  - `chattr -a file1` -> Removes the append only attribute of a file
+  - `chattr +d file1` -> Sets the no dump attribute of a file, which means the file won't be backed up
+  - `chattr -d file1` -> Removes the no dump attribute of a file
+
+- `getfattr` -> Displays the extended attributes of a file
+  - `getfattr -d file1` -> Displays the extended attributes of a file
+  - `getfattr -m user1 file1` -> Displays the extended attributes of a file for user1
+
+- `setfattr` -> Sets the extended attributes of a file
+  - `setfattr -n user1 -v "test" file1` -> Sets the extended attributes of a file for user1
+
