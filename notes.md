@@ -21,6 +21,14 @@
   - [Common file related tools](#common-file-related-tools)
   - [Finding Text in a file](#finding-text-in-a-file)
   - [Advanced Text Processors](#advanced-text-processors)
+- [Connecting to RHEL](#connecting-to-rhel)
+  - [Logging in to a local console](#logging-in-to-a-local-console)
+  - [Working with multiple terminals](#working-with-multiple-terminals)
+  - [Booting Rebooting and shutting down](#booting-rebooting-and-shutting-down)
+  - [Accessing Systems Remotely](#accessing-systems-remotely)
+    - [Key Based Authentication](#key-based-authentication)
+    - [Screen (Not for RHCSA)](#screen-not-for-rhcsa)
+  - [Transfering files Securely](#transfering-files-securely)
 
 # RHEL 8 - EX200
 
@@ -213,3 +221,98 @@
   - `sed -i -e '2d' /etc/passwd` -> Deletes the second line of the file
   - `sed -i -e '2d;20,25d' /etc/passwd` -> Deletes the second line and lines 20 to 25 of the file
 
+# Connecting to RHEL 
+- `console`   -> Environment that the user looks at
+- `terminal`  -> The program that the user uses to interact with the console
+- In a textual environment console and terminal are the same, but in a graphical environment they are different
+- In a graphical environment we can have multiple terminals on a console, but opposite is not possible
+
+
+- `tty`       -> Displays the terminal that we are currently using
+
+## Logging in to a local console
+- There are two cases
+  1. **Textual console** - login from a login prompt
+  2. **Graphical console** - login from a graphical login screen
+
+- a **root** user is always present, we can login using `su -` or `su - root` or `su -l root`
+- - `w` -> Displays the list of users logged in and the processes they are running
+
+## Working with multiple terminals
+- We can open upto 6 **virtual terminals**, which are accessible using `Ctrl + Alt + F1` to `Ctrl + Alt + F6`
+  - **F1**      -> GNOME Display manager
+    ![GNOME Display Manager](./assets/Screenshot%20from%202023-11-03%2023-21-38.png)
+  - **F2**      -> Current Graphical console
+    ![Current Graphical console](./assets/Screenshot%20from%202023-11-03%2023-22-13.png)
+  - **F3**      -> Current grphical session
+    ![Current grphical session](./assets/Screenshot%20from%202023-11-03%2023-22-38.png)
+  - **F4 - F6** -> Non graphical consoles
+
+- To change through the virtual terminals we can also use `chvt 1-6` command
+- The first one is the default console known as **virtual console tty1** and the respecitve device file is `/dev/tty1`
+- if we open a terminal in an environment a device file is create
+  - if opened in a **graphical environment** - `/dev/pts/0` - **pseudo terminal**
+  - if opened in a **textual environment** - `/dev/tty2` - **virtual terminal**
+
+## Booting Rebooting and shutting down
+- Rebooting is a neccessary task, because it clears the memory and also loads the new kernel
+- Knowing which parameter to trigger is essentially a crucial part in rebooting the system while stuck
+
+- To issue a proper reboot we have to alert **Systemd** process, which is the **first process** that is started by the kernel
+- `systemctl` is the command that is used to interact with the systemd process
+  - `systemctl reboot` -> Reboots the system or `reboot`
+  - `systemctl poweroff` -> Shuts down the system or `shutdown -h now`
+  - `systemctl halt` -> Halts the system, stops the system abruptly or `halt`
+
+- In some cases these commands might not working due to some issues, there are some alternatives to reboot the system
+  - `echo -b > /proc/sysrq-trigger` -> to force a machiene to reset
+
+## Accessing Systems Remotely
+- `ssh` -> Secure Shell, is a protocol that allows us to connect to a remote system securely
+  - `ssh user@host` -> Connects to the remote system
+  - `ssh remoteserver -l user` -> Connects to the remote system
+  - `ssh -p 2222 user@host` -> Connects to the remote system on a specific port
+
+
+- `sshd` -> Secure Shell Daemon, is the service that runs on the remote system and listens for incoming connections
+  - `systemctl status sshd` -> Displays the status of the sshd service
+  - `systemctl start sshd` -> Starts the sshd service
+
+### Key Based Authentication
+- To make ssh a bit more secure we can use **Key Based Authentication**
+  - `ssh-keygen` -> Generates a public and private key pair, the user who wants to connect to a server
+  - `ssh-copy-id user@host` -> Copies the public key to the remote host
+  - Once we have copied to the target it get's stored in `~/.ssh/authorized_keys`
+  - `ssh -i ~/.ssh/id_rsa user@host` -> Connects to the remote system using the private key
+
+
+- After we connect to remote host the **identity** of the remote host is stored in the `~/.ssh/known_hosts` file
+- By default we can't start a **graphical session** using ssh, which actually requires **RDP** or **VNC**. 
+- But we can use **X11 forwarding** to start a graphical session
+  - `ssh -X user@host` -> Connects to the remote system and starts a graphical session, security extensions are enabled here
+  - `ssh -Y user@host` -> Connects to the remote system and starts a graphical session, but it's less secure
+
+- We can create a system wide configuration that allows you to use **X Forwarding** by default
+  - `sudo vim /etc/ssh/ssh_config`
+  - `ForwardX11 yes`
+  - `ForwardX11Trusted yes`
+
+### Screen (Not for RHCSA)
+- `screen` is a terminal multiplexer, which allows us to run multiple terminals in a single terminal
+  - `yum install -y epel-release`   -> Installs the epel repository, which has screen
+  - `yum install -y screen`         -> Installs the screen package
+
+- Screen is particulary useful in a ssh session, which allows us to dettach and reattch the ssh session using certian shortcuts
+- `screen` to create a new terminal and `screen -r` to dettach the session
+
+## Transfering files Securely
+- if a host is running `sshd` service then we can use it to transfer files using `scp` command to copy or `rsync` to synchronise the file
+  - `scp file1 user@host:/tmp` -> Copies the file to the remote system
+  - `scp user@host:/tmp/file1 .` -> Copies the file from the remote system
+  - `rsync -avz file1 user@host:/tmp` -> Synchronises the file to the remote system
+  - `rsync -avz user@host:/tmp/file1 .` -> Synchronises the file from the remote system
+
+- `scp` and `rsync` command provides an interface similar to `cp` command. `sftp` is similar to `FTP`
+- `sftp` is also a command that can be used to transfer files, but it's not as efficient as `scp` or `rsync`
+  - We open a **client-session** on remote server and then transfer files
+  - We use `put` to upload and `get` to download similar to FTP commands

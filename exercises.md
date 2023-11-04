@@ -5,6 +5,10 @@
   - [Exercise 2-4](#exercise-2-4)
 - [Chapter 4: Working with Text Files](#chapter-4-working-with-text-files)
   - [Exercise 4-3](#exercise-4-3)
+- [Chapter 5: Connecting to RHEL](#chapter-5-connecting-to-rhel)
+  - [Exercise 5-1](#exercise-5-1)
+  - [Exercise 5-3](#exercise-5-3)
+  - [Exercise 5-5](#exercise-5-5)
 
 # Chapter2: Using essential tools
 ## Exercise 2-1
@@ -22,3 +26,13 @@
 # Chapter 4: Working with Text Files
 ## Exercise 4-3
 ![Exercise 4-3](./assets/Screenshot%20from%202023-11-03%2019-46-22.png)
+
+# Chapter 5: Connecting to RHEL
+## Exercise 5-1
+![Exercise 5-1](./assets/Screenshot%20from%202023-11-03%2023-16-55.png)
+
+## Exercise 5-3
+![Exercise 5-3](./assets/Screenshot%20from%202023-11-04%2001-02-58.png)
+
+## Exercise 5-5
+![Exercise 5-5](./assets/Screenshot%20from%202023-11-04%2008-03-57.png)
