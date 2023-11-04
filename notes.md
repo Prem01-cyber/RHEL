@@ -29,6 +29,17 @@
     - [Key Based Authentication](#key-based-authentication)
     - [Screen (Not for RHCSA)](#screen-not-for-rhcsa)
   - [Transfering files Securely](#transfering-files-securely)
+- [User and Group management](#user-and-group-management)
+  - [User types](#user-types)
+  - [Managing User accounts](#managing-user-accounts)
+    - [Creating User](#creating-user)
+    - [Removing User](#removing-user)
+    - [Modifying User](#modifying-user)
+  - [Managing password properties](#managing-password-properties)
+  - [Creating a user environement](#creating-a-user-environement)
+  - [Group accounts](#group-accounts)
+    - [Creating groups](#creating-groups)
+    - [Modifying groups](#modifying-groups)
 
 # RHEL 8 - EX200
 
@@ -316,3 +327,143 @@
 - `sftp` is also a command that can be used to transfer files, but it's not as efficient as `scp` or `rsync`
   - We open a **client-session** on remote server and then transfer files
   - We use `put` to upload and `get` to download similar to FTP commands
+
+# User and Group management
+## User types
+- `id` -> Displays the user id and group id of the current user
+  - `0`     -> root user or superuser
+  - `1-999` -> System users
+  - `1000+` -> Regular users
+
+- `su` -> Switch User, allows us to switch to another user
+  - `su -` -> Switches to root user, all the variables are set correctly if `-` is used
+  - `su - user1` -> Switches to user1
+  - `su -l user1` -> Switches to user1
+
+- `sudo` -> Super User Do, allows us to execute commands as another user (Non root user)
+  - `sudo -u user1 id` -> Executes the `id` command as user1
+  - `sudo -i` -> Switches to root user, all the variables are set correctly if `-i` is used
+  - `sudo -l` -> Lists the commands that the current user can execute as another user or root, `sudo -ll` give long listing format
+
+- we can grant root privileges to a specific user during installation or we can do it manually by adding the user to `wheel`
+  1. `visudo` -> Opens the sudoers file, which is used to grant root privileges to a user
+  2. `usermod -aG wheel user1` -> Adds the user1 to the wheel group
+      - and adding `%wheel ALL=(ALL) ALL)`, which means all the users in the wheel group can execute all commands as root
+
+- Most admin programs with GUI use **Policy Kit** to authenticate as root user, just prompted for auth in graphical interface
+  - `pkaction` -> Displays the list of actions that can be executed by the current user
+  - `polkit` -> Policy Kit, is the service that is responsible for authenticating users
+  - `pkexec` -> Executes a command as another user
+    - `pkexec id` -> Executes the `id` command as root user
+    - `pkexec -u user1 id` -> Executes the `id` command as user1
+
+![Policy Kit](./assets/Screenshot%20from%202023-11-04%2009-52-01.png)
+
+## Managing User accounts
+- **/etc/passwd** -> Contains the list of users on the system
+  - `user1:x:1000:1000:User 1:/home/user1:/bin/bash`
+    - **user1** -> Username
+    - **x** -> Password, **x** means the password is stored in **/etc/shadow**
+    - **1000** -> User ID
+    - **1000** -> Group ID
+    - **User 1** -> User's full name
+    - **/home/user1** -> Home directory
+    - **/bin/bash** -> Default shell
+      - This is the program that is started after the user has connected to the server
+      - system user accounts (1-999) have `/sbin/nologin` as default shell
+      - regular user accounts (1000+) have `/bin/bash` as default shell
+      - `/sbin/nologin` -> Prevents the user from logging in
+
+
+- **/etc/group**  -> Contains the list of groups on the system or we can use `groups` command
+- **/etc/shadow** -> Contains the list of users and their passwords
+  - `user1 : $6$1X2X3X4X5X6X7X8X9X0X1X2X3X4X5X6X7X8X9X0X1X2X3X4X5X6X7X8X9X0X1X2X3X4X5X6X7X8X9X0X/: 18953:0:99999:7:::`
+    - **user1** -> Username
+    - **$6$1X2X3X4X5X6X7X8X9X0X1X2X3X4X5X6X7X8X9X0X1X2X3X4X5X6X7X8X9X0X1X2X3X4X5X6X7X8X9X0X/** -> Password
+    - **18953** -> Last password change since epoch (Jan 1, 1970)
+    - **0** -> Minimum password age
+    - **99999** -> Maximum password age
+    - **7** -> Password warning period
+    - **:::** -> Inactive
+
+### Creating User
+- There are many ways to create a user
+  1. Mondifying **/etc/passwd** and **/etc/shadow** directly using `vipw` for /etc/passwd and `vipw -s` for shadow, has many risks though
+  2. `useradd` command utility
+      - `useradd -m -u 1201 -G sales,ops linda` -> Creates a user with user id 1201 and adds the user to sales and ops group
+
+- `useradd` command creates the user, but it doesn't set the password, we need `passwd` to set the password
+  - `passwd linda` -> Sets the password for the user linda
+  - `passwd -e linda` -> Expires the password for the user linda, which means the user has to change the password on next login
+
+- When a home directory is created the contents of **/etc/skel** is copied to the home directory
+- These files would also get appropriate permissions based on the new user
+
+- While working with `useradd` some default values are assumed
+  - `useradd -D` or `/etc/default/useradd`  -> Displays the default values
+  - `/etc/login.defs`                       -> Login default values, motd, envpath, password aging, home creation.
+
+### Removing User
+- `userdel` commands is used to remove user
+- `userdel -r` -> Removes the user and the home directory (removes complete user environment)
+
+### Modifying User
+- we could modify user properties with `vipw` or we could use the `usermod` command line utility
+- `usermod -p` -> its tells to use encrypted password for the new password
+
+- [Go to Modifying groups section](#modifying-groups)
+
+## Managing password properties
+- passwords are present in **/etc/shadow**, the properties can be changed manually using `vipw -s` or we can use `chage` and `passwd` commands
+  - `passwd -n 30 -w 3 -x 90 -i 7 linda` -> Sets the password properties for the user linda
+    - `-n` -> Minimum password age
+    - `-w` -> Password warning period
+    - `-x` -> Maximum password age
+    - `-i` -> Inactive
+  - `chage -E 2025-12-31 bob` -> Sets the password expiration date for the user bob
+  - `chage -l bob` -> Displays the password properties for the user bob
+  - `chage anna` -> **interactive** way of changing password properties
+
+## Creating a user environement
+- When a user logs in, the shell reads the configuration files and sets the environment variables. 
+- all the environemnt variables can be viewed through `printenv` command
+- There are specific files that play a role in creating user environment
+  - **/etc/profile**    -> default settings for all users when starting a login shell
+  - **/etc/bashrc**     -> defines default settings for all users when starting a non-login shell
+  - **~/.bash_profile** -> default settings for a specific user when starting a login shell
+  - **~/.bashrc**       -> default settings for a specific user when starting a non-login shell+
+
+- A login shell is the first shell that is run when you login into a Unix-like operating syste. it's the parent of all your other shells
+- A non-login shell, on the other hand, is a shell that is started after the login shell
+- For example, when you open a terminal window from the graphical user interface, you are starting a non-login shell.
+
+- a login shell executes
+  1. **/etc/profile**
+  2. looks for **~/.bash_profile**, **~/.bash_login**, and **~/.profile** in that order
+
+- a non-login shell executes
+  1. **~/.bashrc**
+
+## Group accounts
+- Every linux user has a **primary group (itself)** and can be a member of multiple groups
+- Users can access all files their primary group has access to and all files that their secondary groups have access to
+
+- we can list groups using `groups` command which uses `/etc/group` file.
+- `id` also lists the groups that the user is a member of
+
+### Creating groups
+- `groupadd` command is used to create groups
+  - `groupadd -g 1201 sales` -> Creates a group with group id 1201 and name sales
+
+- we can also add groups manually using `vigr` which allows us to edit the `/etc/group` file directly, which is rather unsafe
+
+### Modifying groups
+- `groupmod` command is used to modify groups
+  - `groupmod -n sales1 sales` -> Renames the group sales to sales1
+  - `groupmod -g 1202 sales1` -> Changes the group id of sales1 to 1202
+
+- Once a new group is added we can use `usermod` to add users to the group
+  - `usermod -aG sales1 linda` -> Adds the user linda to the group sales1
+
+- `groupmems` is a convinient way to list the members of a group
+  - `groupmems -g sales -l` -> Lists the members of the group sales
