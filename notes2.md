@@ -4,6 +4,13 @@
     - [Ports and services](#ports-and-services)
   - [Network configuration](#network-configuration)
   - [Setting up hostname and DNS](#setting-up-hostname-and-dns)
+- [Software Management](#software-management)
+- [Managing Processes](#managing-processes)
+  - [Managing jobs](#managing-jobs)
+  - [Managing Parent-child jobs](#managing-parent-child-jobs)
+  - [Process Management](#process-management)
+  - [Killing Processes](#killing-processes)
+  - [Using Tuned to optmize performance](#using-tuned-to-optmize-performance)
 
 # Configuring Networks
 ## Fundamentals
@@ -93,4 +100,85 @@
 - `getent hosts <hostname>` -> shows the IP address of the hostname, it searches both /etc/hsots and DNS server
 - `dig <hostname>` or `nslookup <hostname>` -> shows the IP address of the hostname, it searches only the DNS server
 
-- we should not specify DNS servers directly in `/etc/resolv.conf` file, because it will be overwritten by NetworkManager
+- we should not specify DNS servers directly in `/etc/resolv.conf` file, because it will be overwritten by NetworkManager 
+
+# Software Management
+**UNDER PROGRESS**
+
+# Managing Processes
+- **Shell Jobs**      -> processes that are started from the shell
+- **Daemons**         -> processes that are started by the system
+- **Kernel threads**  -> part of linux kernel, we can't manage them just for monitoring
+
+- when a process starts it can use multiple threads, each thread has its own stack and registers
+- so if a process is very busy, the threads will be handled by multiple CPU cores
+
+- There are **Two** kinds of background processes
+  1. `Kernel Threads`   -> part of linux kernel and each of them is started with it's own PID
+     - `ps -ef | grep kthreadd` -> shows the kernel threads
+     - Kernel threades aren't manageable, we can't assign a priority to them, neither we can kill them. Unless we reboot the system
+  2. `Daemon processes` -> 
+
+## Managing jobs
+- all the jobs are processes as well, but not all the processes are jobs
+
+- `jobs` -> shows the jobs running in the current shell
+  - `&` -> runs the command in the background
+  - `fg` -> brings the background job to foreground
+  - `bg` -> runs the background job in the background
+  - `Ctrl + Z` -> suspends the foreground job
+  - `Ctrl + C` -> stops the current job and removes it from the memory
+  - `Ctrl + D` -> job stops waiting for further input
+
+- `ps` -> shows the processes running in the current shell
+
+## Managing Parent-child jobs
+- all processes started from a shell are terminated when that shell is stopped
+- But processes started in the background will not be killed when the parent shell from which they were started is killed
+- ![parent](assets/Screenshot%20from%202023-11-05%2013-36-08.png)
+- if a parent process is killed while child process is still active it comes under **systemd** instead
+
+## Process Management
+- `ps` -> show process started by the current user
+  - `ps -aux`     -> short summary of active processes
+  - `ps -ef`      -> exact details of the command and processes started
+  - `ps -fax`     -> parent child relationships between prcesses
+
+- `top` -> shows processes in real time and a neat utility to manage processes
+
+- By default all the processes are started with a default priority of **20**, but it can be altered using 
+  - `nice`    -> start a process with adjusted priority
+    - `nice -n 5 dd if=/dev/zero of=/dev/null`  -> starts with a default priority of 25
+  - `renice`  -> change the priority of active process, `r` in top
+    - `renice -n 10 -p 4845 `                   -> get's the process priority to 35
+- we can select values ranging form `-20` to `19`, default niceness of a process is set to `0`. Which means `20`
+
+## Killing Processes
+- `kill` -> command used to kill process, or `k` with top utility
+  - `kill -<signal> <pid>` -> kill the process using pid and signal
+
+- There are signals that can be sent to a process all of them can be listed using `kill -l`
+  - `SIGTERM` -> terminate the process    -> `15` -> default signal (recommended)
+  - `SIGKILL` -> kill the process         -> `9`  -> uses force to stop the process (Risk of loss of data)
+  - `SIGHUP`  -> hangup the process       -> `1`
+
+- There are some commands that are related to kill,
+  - `killall`     -> kill processes by name, if there are multiple processes by the same name
+  - `pkill`       -> kill using pid
+
+- `uptime` -> shows the uptime of the system
+- `lscpu`  -> shows the details of the CPU
+
+## Using Tuned to optmize performance
+- `tuned` -> daemon that monitors the system and automatically tunes it for **optimal performance**
+  - `yum -y install tuned` -> install tuned
+  - `systemctl start tuned` -> start tuned service
+  - `systemctl enable tuned` -> enable tuned service
+
+- `tuned-adm`         -> command used to manage tuned profiles
+- `tuned-adm list`    -> shows the list of profiles
+- ![profiles](assets/Screenshot%20from%202023-11-05%2014-44-47.png)
+
+- `tuned-adm active`    -> shows the active profile
+- `tuned-adm recommend` -> recommends the best profile for the system
+- **throughput-performance** is the one that allows maximum throughput

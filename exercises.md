@@ -18,6 +18,9 @@
 - [Chapter 8: Configuring Networking](#chapter-8-configuring-networking)
   - [Exercise 8-1](#exercise-8-1)
   - [Exercise 8-2](#exercise-8-2)
+- [Chapter 10: Managing Processes](#chapter-10-managing-processes)
+  - [Exercise 10-1](#exercise-10-1)
+  - [Exercise 10-4](#exercise-10-4)
 
 # Chapter2: Using essential tools
 ## Exercise 2-1
@@ -66,3 +69,10 @@
 
 ## Exercise 8-2
 ![Exercise 8-2](assets/Screenshot%20from%202023-11-05%2001-46-31.png)
+
+# Chapter 10: Managing Processes
+## Exercise 10-1
+![Exercise 10-1](assets/Screenshot%20from%202023-11-05%2013-29-36.png)
+
+## Exercise 10-4
+![Exercise 10-4](assets/Screenshot%20from%202023-11-05%2014-46-52.png)
