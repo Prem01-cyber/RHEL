@@ -11,6 +11,13 @@
   - [Process Management](#process-management)
   - [Killing Processes](#killing-processes)
   - [Using Tuned to optmize performance](#using-tuned-to-optmize-performance)
+- [Working with Systemd](#working-with-systemd)
+  - [Unit Files](#unit-files)
+    - [Understanding Unit Files](#understanding-unit-files)
+    - [Understanding Mount Unit files](#understanding-mount-unit-files)
+    - [Understanding Socket Unit files](#understanding-socket-unit-files)
+    - [Understanding target Unit files](#understanding-target-unit-files)
+      - [Systemctl](#systemctl)
 
 # Configuring Networks
 ## Fundamentals
@@ -182,3 +189,70 @@
 - `tuned-adm active`    -> shows the active profile
 - `tuned-adm recommend` -> recommends the best profile for the system
 - **throughput-performance** is the one that allows maximum throughput
+
+# Working with Systemd
+- `systemd` -> system and service manager for linux, it is used to start **units**
+- Units can be many things one of the most important unit types is the **service**
+  - `systemctl -t help` -> provides **list of all the unit** types
+- Services are proceses that provide specific functionality and allow connections from external devices
+
+## Unit Files
+- `/usr/lib/systemd/system` -> contains the unit files that are installed by the system
+- `/etc/systemd/system`     -> contains custom unit files
+- `/run/systemd/system`     -> contains the unit files that are created by the system (automatically)
+
+- If units exisit in more than one directory them `/run/systemd/system` takes precedence over `/etc/systemd/system` and `/etc/systemd/system` takes precedence over `/usr/lib/systemd/system`
+- Unit files are used to build the functionality that is needed on your server
+
+### Understanding Unit Files
+- ![atd.service](assets/Screenshot%20from%202023-11-05%2018-49-54.png)
+- `[UNIT]`
+  - has description of the unit and the dependencies (what should be started **before** this unit and **after** this unit)
+  - Dependencies can also be defined using keywords like **Requires**, **Requisite**, **Wants** etc
+- `[SERVICE]`
+  - describes how to start and stop the service
+  - **ExecStart** line which contains the command to start the service
+  - **ExecStop** line which contains the command to stop the service
+- `[INSTALL]`
+  - describes in which **target** the unit has to be started
+  - for example **multi-user.target** is one of the targets
+
+- `systemctl show <unit>` -> gives available options that can be configured for the unit
+- all the edited unit files should be reloaded using `systemctl daemon-reload` command
+  - we can edit the files directly using text editor or we can use `systemctl edit <unit>` command
+- edited files go into `/etc/systemd/system` directory
+
+### Understanding Mount Unit files
+- ![dev-mqueue.mount](assets/Screenshot%20from%202023-11-05%2018-55-23.png)
+- `[MOUNT]`
+  - describes where the mount point is and what to mount
+
+### Understanding Socket Unit files
+- ![sshd.socket](assets/Screenshot%20from%202023-11-05%2018-58-01.png)
+- `[SOCKET]`
+  - the ListenStream defines on which port is the service listening
+
+### Understanding target Unit files
+- ![multi-user.target](assets/Screenshot%20from%202023-11-05%2018-59-41.png)
+- a target unit is a group of units that are started together
+- targets themselves have dependencies on other targets these are defined inside a target unit
+  - `systemctl list-dependecies` -> shows the dependencies of the target, by default it shows `default.target`
+
+- For instance we made `vsftpd.service` to start at boot using `systemctl enable vstpd.service`
+  1. a sysmbolic link is created in `/etc/systemd/system/multi-user.target.wants/vstpd.service` pointing to `/usr/lib/systemd/system/vstpd.service` 
+  2. hence ensuring that the service is started at boot
+  3. this symbolic links is called as `want`
+
+#### Systemctl 
+- Managing systemd units starts with starting and stopping units, which is done through `systemctl`
+  - `systemctl start <unit>`    -> starts the unit
+  - `systemctl stop <unit>`     -> stops the unit
+  - `systemctl restart <unit>`  -> restarts the unit
+  - `systemctl reload <unit>`   -> reloads the unit
+  - `systemctl status <unit>`   -> shows the status of the unit
+  - `systemctl enable <unit>`   -> enables the unit to start at boot
+
+- `systemctl --type=service`                -> shows all the services
+- `systemctl list-units --type=service`     -> shows all the active service units
+- `systemctl --failed --type=service`       -> shows all failed services
+- `systemctl status -l <unit>`              -> shows the status of the unit in detail
