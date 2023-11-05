@@ -15,6 +15,9 @@
   - [Exercise 7-1](#exercise-7-1)
   - [Exercise 7-2](#exercise-7-2)
   - [Exercise 7-3](#exercise-7-3)
+- [Chapter 8: Configuring Networking](#chapter-8-configuring-networking)
+  - [Exercise 8-1](#exercise-8-1)
+  - [Exercise 8-2](#exercise-8-2)
 
 # Chapter2: Using essential tools
 ## Exercise 2-1
@@ -56,3 +59,10 @@
 
 ## Exercise 7-3
 ![Exercise 7-3](assets/Screenshot%20from%202023-11-04%2017-49-39.png)
+
+# Chapter 8: Configuring Networking
+## Exercise 8-1
+![Exercise 8-1](assets/Screenshot%20from%202023-11-05%2001-39-47.png)
+
+## Exercise 8-2
+![Exercise 8-2](assets/Screenshot%20from%202023-11-05%2001-46-31.png)
