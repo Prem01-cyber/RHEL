@@ -21,6 +21,7 @@
 - [Chapter 10: Managing Processes](#chapter-10-managing-processes)
   - [Exercise 10-1](#exercise-10-1)
   - [Exercise 10-4](#exercise-10-4)
+- [Chapter 21: Managing Apache and HTTP services](#chapter-21-managing-apache-and-http-services)
 
 # Chapter2: Using essential tools
 ## Exercise 2-1
@@ -75,4 +76,7 @@
 ![Exercise 10-1](assets/Screenshot%20from%202023-11-05%2013-29-36.png)
 
 ## Exercise 10-4
-![Exercise 10-4](assets/Screenshot%20from%202023-11-05%2014-46-52.png)
+![Exercise 10-4](assets/Screenshot%20from%202023-11-05%2014-46-52.png)+
+
+# Chapter 21: Managing Apache and HTTP services
+![Exercise 21-1](assets/Screenshot%20from%202023-11-06%2000-27-42.png)

@@ -18,6 +18,9 @@
     - [Understanding Socket Unit files](#understanding-socket-unit-files)
     - [Understanding target Unit files](#understanding-target-unit-files)
       - [Systemctl](#systemctl)
+- [Scheduling Jobs](#scheduling-jobs)
+- [Configuring Logging](#configuring-logging)
+  - [Role of rsyslogd and journald](#role-of-rsyslogd-and-journald)
 
 # Configuring Networks
 ## Fundamentals
@@ -256,3 +259,14 @@
 - `systemctl list-units --type=service`     -> shows all the active service units
 - `systemctl --failed --type=service`       -> shows all failed services
 - `systemctl status -l <unit>`              -> shows the status of the unit in detail
+
+# Scheduling Jobs
+**UNDER PROGRESS**
+
+# Configuring Logging
+- **Direct Write**  -> logs are written directly to the log files
+- **rsyslogd**      -> enhacement of **syslogd**, a service that takes care of managing centralized log files
+- **journald**      -> this is tightly integrated with systemd, which allows admin to read from journal while monitoring the system
+
+## Role of rsyslogd and journald
+**Under Progress**
