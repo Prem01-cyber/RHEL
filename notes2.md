@@ -4,7 +4,6 @@
     - [Ports and services](#ports-and-services)
   - [Network configuration](#network-configuration)
   - [Setting up hostname and DNS](#setting-up-hostname-and-dns)
-- [Software Management](#software-management)
 - [Managing Processes](#managing-processes)
   - [Managing jobs](#managing-jobs)
   - [Managing Parent-child jobs](#managing-parent-child-jobs)
@@ -111,9 +110,6 @@
 - `dig <hostname>` or `nslookup <hostname>` -> shows the IP address of the hostname, it searches only the DNS server
 
 - we should not specify DNS servers directly in `/etc/resolv.conf` file, because it will be overwritten by NetworkManager 
-
-# Software Management
-**UNDER PROGRESS**
 
 # Managing Processes
 - **Shell Jobs**      -> processes that are started from the shell
