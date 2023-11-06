@@ -10,6 +10,12 @@
   - [Exam conditions](#exam-conditions)
 - [Linux Firewalling](#linux-firewalling)
   - [Understanding Firewalld service](#understanding-firewalld-service)
+- [Accessing Network Storage](#accessing-network-storage)
+  - [Mounting NFS share](#mounting-nfs-share)
+  - [Using CIFS services](#using-cifs-services)
+  - [Configuring Samba Server](#configuring-samba-server)
+  - [Mounting remote file system using fstab](#mounting-remote-file-system-using-fstab)
+  - [Configuring automount](#configuring-automount)
 
 
 # Managing Apache and HTTP Services
@@ -136,7 +142,7 @@
 ## Exam conditions
 - make sure to check SELinux is enabled and in enforcing mode by editing `/etc/sysconfig/selinux`
 - use `restorecon` to reapply the right context to file or directory
-- use `sealart` to analyze the logs
+- use `sealert` to analyze the logs
 
 # Linux Firewalling
 - firewall is implemented in the kernel using **netfilter (nftables)** (newer) and **iptables** (older)
@@ -159,3 +165,70 @@
   - `firewall-cmd --zone=public --add-service=http` -> to add http service to public zone, adds it **temporarily** - runtime configuration
   - `firewall-cmd --zone=public --add-service=http --permanent` -> to add http service to public zone **permanently**
   - Custom services can be added to `/etc/firewalld/services` directory and will be automatically picked up upon restart
+
+# Accessing Network Storage
+- **NFS** is a protocol that allows us to share directories and files over the network
+- **NFS4** is the current version in RHEL
+- we can use `mount` utility to nfs shares
+  - we can specify version using `nfsvers` option
+
+- Setting up nfs
+  1. Create a local directory
+  2. edit the `/etc/exports` file to specify the directory to be shared
+  3. start NFS server
+  4. configure your firewall to allow NFS traffic
+
+- ![Exercise 24-1](assets/Screenshot%20from%202023-11-06%2013-52-09.png)
+
+## Mounting NFS share
+- We need to know the mounts name in order to mount it
+  - we can be assisted by the administrator of the NFS server
+  - `showmount -e server2.example.com` -> to list all the mounts
+
+- `mount server2.example.com:/ /mnt` -> to mount the root directory of the server2.example.com to /mnt
+  - we can check the mount using `mount` command or we can verify by going to `/mnt` directory
+  - `mount -t nfs -o nfsvers=4 server2.example.com:/ /mnt` -> to mount the root directory of the server2.example.com to /mnt using NFS4
+
+## Using CIFS services
+- **SMB** protocol is foundation of all shares that are created in a windows enviroment
+- a samba become more standardized it is now called **CIFS** (Common Internet File System)
+
+- Before mounting a CIFS share we need to install `cifs-utils` package
+  - `yum install -y cifs-utils`
+- we can use `smbclient -L server2.example.com` to list all the shares available on the server2.example.com
+- Now we can mount the smb shares using mount command
+  - `mount -t cifs -o username=administrator,password=redhat //server2.example.com/share /mnt` -> to mount the share to /mnt
+
+## Configuring Samba Server
+**NOT FOR RHCSA**
+
+## Mounting remote file system using fstab
+- we can mount manually mount NFS and CIFS shares but it is not a good practice
+- we can use `/etc/fstab` file to mount the shares automatically at boot time
+- ![fstab](assets/Screenshot%20from%202023-11-06%2015-26-37.png)
+  - `server2.example.com:/share /mnt nfs sync 0 0`
+  - server2.example.com:/share  -> is the remote share
+  - /mnt                        -> is the local mount point
+  - nfs                         -> is the file system type
+  - sync                        -> is the mount option
+  - 0 0                         -> are the dump (No backup support throught `dump` utility) and fsck (don't check the integrity) options
+
+- for samba shares
+  - `//server2.example.com/share /mnt cifs username=administrator,password=redhat 0 0`
+
+## Configuring automount
+- alternatively we configure automount to mount the share automatically
+- **automount** is implemented using **autofs** service and automount ensures that the **share is mounted only when it is accessed**
+- the important benefit of using automount is that it works completely in user space and does not require sudo permissions like mount
+
+- to configure automount we need to edit `/etc/auto.master` file
+  - `/nfsdata /etc/auto.nfsdata` -> edit in `/etc/auto.master` file
+  - `files -rw server2:/nfsdata` -> edit in `/etc/auto.nfsdata` file
+    - files             -> name of the subdirectory that will be created in the mount point as a relative file name
+    - -rw               -> is the mount option
+    - server2:/nfsdata  -> is the remote share
+
+- In some cases we use wildcards while mounting files
+  - `* -rw server2:/users/&` -> to mount all the files in the `/users` directory of the server2
+    - the `&` is replaced by the name of the file
+    - the files will be mounted as `/users/file1`, `/users/file2` and so on

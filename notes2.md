@@ -270,3 +270,4 @@
 
 ## Role of rsyslogd and journald
 **Under Progress**
+

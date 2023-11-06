@@ -26,6 +26,7 @@
   - [Exercise 22-2](#exercise-22-2)
   - [Exercise 22-4](#exercise-22-4)
   - [Exercise 22-5](#exercise-22-5)
+- [Chapter 24: Accessing Network Storage](#chapter-24-accessing-network-storage)
 
 # Chapter2: Using essential tools
 ## Exercise 2-1
@@ -94,3 +95,6 @@
 
 ## Exercise 22-5
 ![Exercise 22-5](assets/Screenshot%20from%202023-11-06%2011-32-28.png)
+
+# Chapter 24: Accessing Network Storage
+![Exercise 24-1](assets/Screenshot%20from%202023-11-06%2013-52-09.png)
