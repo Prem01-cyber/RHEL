@@ -22,6 +22,10 @@
   - [Exercise 10-1](#exercise-10-1)
   - [Exercise 10-4](#exercise-10-4)
 - [Chapter 21: Managing Apache and HTTP services](#chapter-21-managing-apache-and-http-services)
+- [Chapter 22: Managing SELinuxq](#chapter-22-managing-selinuxq)
+  - [Exercise 22-2](#exercise-22-2)
+  - [Exercise 22-4](#exercise-22-4)
+  - [Exercise 22-5](#exercise-22-5)
 
 # Chapter2: Using essential tools
 ## Exercise 2-1
@@ -80,3 +84,13 @@
 
 # Chapter 21: Managing Apache and HTTP services
 ![Exercise 21-1](assets/Screenshot%20from%202023-11-06%2000-27-42.png)
+
+# Chapter 22: Managing SELinuxq
+## Exercise 22-2
+![Exercise 22-2](assets/Screenshot%20from%202023-11-06%2010-44-00.png)
+
+## Exercise 22-4
+![Exercise 22-4](assets/Screenshot%20from%202023-11-06%2011-27-58.png)
+
+## Exercise 22-5
+![Exercise 22-5](assets/Screenshot%20from%202023-11-06%2011-32-28.png)
