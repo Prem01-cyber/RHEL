@@ -8,6 +8,8 @@
   - [Setting Context types](#setting-context-types)
   - [Using boolean settings to modify SELinux Settings](#using-boolean-settings-to-modify-selinux-settings)
   - [Exam conditions](#exam-conditions)
+- [Linux Firewalling](#linux-firewalling)
+  - [Understanding Firewalld service](#understanding-firewalld-service)
 
 
 # Managing Apache and HTTP Services
@@ -135,3 +137,25 @@
 - make sure to check SELinux is enabled and in enforcing mode by editing `/etc/sysconfig/selinux`
 - use `restorecon` to reapply the right context to file or directory
 - use `sealart` to analyze the logs
+
+# Linux Firewalling
+- firewall is implemented in the kernel using **netfilter (nftables)** (newer) and **iptables** (older)
+- `firewalld` is a system service that can configure firewall rules by using different interfaces
+  - we use `firewall-cmd` command to interact with `firewalld`
+- applications can request ports to be opened by using **DBus** messaging system
+  - which means rules can be added or removed without any direct action from administrator
+- `firewalld` uses **zones** to group interfaces and services
+  - a **zone** is a set of rules that are applied to incoming traffic
+- Firewalld applies to incoming packets only by default and no filtering happens on outgoing packets
+
+## Understanding Firewalld service
+- Serivice in firewalld is not the same as a service in systemd
+- Firewalld service specifies what exactly should be accepted and what should be rejected
+- it includes port opened and modules loaded 
+  - `firewall-cmd --get-services` -> to list all the services available on your system
+  - `firewall-cmd --get-zones` -> to list all the zones available on your system
+- The right services must be added to the right zones
+  - BTS every service is an XML (RPM Installed) file located at `/usr/lib/firewalld/services`
+  - `firewall-cmd --zone=public --add-service=http` -> to add http service to public zone, adds it **temporarily** - runtime configuration
+  - `firewall-cmd --zone=public --add-service=http --permanent` -> to add http service to public zone **permanently**
+  - Custom services can be added to `/etc/firewalld/services` directory and will be automatically picked up upon restart
