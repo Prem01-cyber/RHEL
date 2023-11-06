@@ -16,6 +16,20 @@
   - [Configuring Samba Server](#configuring-samba-server)
   - [Mounting remote file system using fstab](#mounting-remote-file-system-using-fstab)
   - [Configuring automount](#configuring-automount)
+- [Configuring Time services](#configuring-time-services)
+- [Managing Containers](#managing-containers)
+  - [Containers host requiremensts](#containers-host-requiremensts)
+  - [Containers](#containers)
+  - [Running a container](#running-a-container)
+  - [Working with container Images](#working-with-container-images)
+  - [Inspecting Images](#inspecting-images)
+  - [Performing image housekeeping](#performing-image-housekeeping)
+  - [Managing Containers](#managing-containers-1)
+  - [Running commands in a container](#running-commands-in-a-container)
+  - [Managing container ports](#managing-container-ports)
+  - [Managing container environment variables](#managing-container-environment-variables)
+  - [Managing Container storage](#managing-container-storage)
+  - [Running containers as Systemd Services](#running-containers-as-systemd-services)
 
 
 # Managing Apache and HTTP Services
@@ -232,3 +246,155 @@
   - `* -rw server2:/users/&` -> to mount all the files in the `/users` directory of the server2
     - the `&` is replaced by the name of the file
     - the files will be mounted as `/users/file1`, `/users/file2` and so on
+
+# Configuring Time services
+**UNDER PROGRESS**
+
+- `timedatectl` -> to check the current time and date settings
+
+# Managing Containers
+- a container is a complete package that runs on top of computer engine
+- On previous versions of RHEL it was supported by docker, but now it is replaced with a new solution **CRI-o** (Container Runtime Interface) is the container engine
+- There are three tools that are used to manage the containder
+  - `podman` -> main tool used to start, stop and **manage** containers
+  - `buildah` -> a specilized tool used to **build** custom container images
+  - `skopeo`  -> used for **managing** and **testing** containers
+
+## Containers host requiremensts
+- Containers rely heavyly on features offered by the linux kernel
+  - **Namespaces**  -> to isolate processes
+  - **Cgroups**     -> to limit resources
+    - make it possible to create the limitations on resources like cpu cores etc
+    - `cat /proc/cgroups` -> to check the cgroups
+  - **SELinux**     -> secures access using resource labels
+    - a specific context label is added to ensure that containers can access only these resouces they need access to and nothing else
+
+## Containers
+- containers run as **non-root** user by default
+- users can run their own containers and they are not accessable to other users as they are strictly isolated
+
+## Running a container
+- we need to have podman to manage the container
+  - `yum install -y container-tools`
+- `podman run <image name>`
+  - it does not require root privileges to run
+  - it first pulls the image (`podman run`) and stores it in local system and then runs the container
+  - when you run a non root container the container files are copied to `~/.local/share/containers/storage`
+
+1. podamn first contact few container registries 
+2. after finding the requested image it downloads the image
+   - the image is stored in `/var/lib/containers` directory
+   - podman still uses docker image format so it's pulled from docker hub
+3. when the image file is available on your local server the nginx container is started. the container runs in the foreground
+4. we typically want to run the container in the background
+   - `podman run -d <image name>`
+   - `podamn run -it <image name` -> has some better options but background is better
+
+- `podman ps`     -> to list all the running containers
+- `podamn ps -a`  -> containers that have been running but now are inactive
+
+
+## Working with container Images
+- the container is a running instance of the image where a writable layer is added to store changes made to container
+- to work with images you need to how to access container registries and how to find the right image
+- container images are fetched from container registries located at `/etc/containers/registries.conf`
+  - a root less container registry is located at `~/.config/containers/registries.conf`
+  - in case of conflict user >> generic
+
+- **[registries.search]**   -> lists default registries that are used to search for images
+- **[registries.insecure]** -> lists registries that are used to search for images that are not secured with TLS
+- **[registries.block]**    -> lists registries that are blocked and cannot be used to search for images
+
+- `podman info` -> registries that are currently being used
+- `podman search nginx` -> to search for nginx images
+  - if we not only need to access registries but red hat registry too you need to login to red hat registry using `poman login`
+    - `podman login registry.redhat.io`         -> to login to red hat registry
+    - `podman login registry.access.redhat.com` -> to login into red hat access registry
+  - we can use `filter` option to filter the search results
+    - `podman search nginx --filter is-official=true nginx` -> to search for official nginx images
+
+## Inspecting Images
+- `podman inspect nginx` -> to inspect the image for local images
+  - we first need to pull the image using `podman pull nginx`, we can know the image name by using `podman images`
+  - `podman inspect --format "{{.Architecture}}" nginx` -> to inspect the image and get the architecture of the image
+
+- alternatively we can `skopeo inspect` command to inspect the images, in a much more readable format
+  - `skopeo inspect docker://nginx`       -> to inspect the image
+
+## Performing image housekeeping
+- for every container we run a image is stored in our system
+  - to remove it we can use `podman rmi`
+  - `podman rmi` only works if the container is not running
+
+## Managing Containers
+- `podman stop`     -> to stop a container will a kill signal SIGTERM (15), after 10sec it will send a SIGKILL (9) signal
+- `podman kill`     -> to kill a container with a SIGKILL (9) signal immediately
+- `podman restart`  -> to restart a container that is currently running
+- `podman start`    -> to start a container that is currently stopped
+- `podman rm`       -> to remove a container files from the system
+  - `podman run --rm` -> to remove the container after it is stopped
+
+## Running commands in a container
+- when a container starts it executes the containr entrypoint command, a default command that is specified to be started in the container image
+- In some cases you may have to run other commands inside the container as well
+  - we can use `podman exec` command to run commands inside the container
+    - the command output is written to **STDOUT**
+  - `podman exec -it mycontainer /bin/bash` -> to run a bash shell inside the container
+    - `-it`         -> to run the command interactively
+    - `mycontainer` -> is the name of the container
+    - `/bin/bash`   -> is the command to be executed
+
+## Managing container ports
+- by default containers are isolated from the host system and cannot be accessed from outside
+- to make the network service running in the container accessible from outside you need to configure **port forwarding**
+- as we have a root less container we have only to non privileged ports available
+  - **1-1024**      -> non privileged ports
+  - **1025-65534**  -> privileged ports
+- if we want to access privileged ports we need use `sudo` to run the containers
+- `podman run --name nginxport -d -p 8080:80 nginx` -> to run the container and forward the port 80 to 8080
+  - `-p 8080:80` -> to forward the port 80 to 8080
+- `sudo firewall-cmd --add-port 8080/tcp --permanent` -> to add the port 8080 to firewall
+- `sudo firewall-cmd --reload` -> to reload the firewall
+
+## Managing container environment variables
+- some containers need environment variables to be set to run properly, if not they get stopped abruptly
+  - `podman logs`     -> to check the logs of the container for what went wrong
+  - `podman inspect`  -> to inspect the container for environment variables
+    - especially for the `usage` line
+  - `podman run -d -e MYSQL_ROOT_PASSWORD=redhat mysql` -> to run the container with environment variable
+    - `-e` -> to specify the environment variable
+    - `MYSQL_ROOT_PASSWORD=redhat` -> is the environment variable
+    - `mysql` -> is the image name
+
+## Managing Container storage
+- [Go to Working with container Images section](#working-with-container-images)
+- the modifications made to the container are stored in a **writable layer** which is added to the image
+- when we remove the image the writable layer is also removed
+- if we make changes to the container and want to make the changes persistent we need a **persistent storage**
+- to add it we **bind-mount** a directory on the host operating system into the container
+  - bind-mount is where a directory is mounted instead of a block device
+  - doing so ensures that contents of directory on the host operating system are available in the container
+  - so when changes are made to the container they are also made to the host operating system
+
+- To access host directory from a container it needs to be prepared
+  - the host directory must be writable by the user that runs the container
+  - appropriate SELinux context `container_file_t` must be set
+    - `semanage fcontext -a -t container_file_t "/hostdir(/.*)?"`
+    - `restorecon -R -v /hostdir` to apply the changes to the host directory
+  - the user who runs the container must be the owner of the directory
+
+## Running containers as Systemd Services
+- on a standalone platform where containers are running rootless containers, systemd is needed to autostart containers
+- `systemctl enable --now myservice.servce` -> to enable and start the service at the boot
+- if no root permissions are available you need to use `systemctl --user start myservice.service` to start the service
+  - by default when `--user` is used services can be automatically started only when user session is started
+  - to define an exception to that you can use the `loginctl` **session manager**
+    - which is a part of systemd solution to enable `linger` for a specific user
+    - `loginctl enable-linger <username>` -> to enable linger for a specific user
+  - `podman generate systemd --name mycontainer --files` -> generates a systemd unit file to start containers
+    - `--name` -> to specify the name of the container
+    - `--files` -> to generate the unit file
+    - the container file must be generated in `~/.config/systemd/user/` directory
+      - we need to create the directory before using `podman generate systemd` command
+  - after the generation of the unit file we need to ensure that **WantedBy=multi-user.target** line exists in the unit file
+    - if it does not exist we need to add it manually
