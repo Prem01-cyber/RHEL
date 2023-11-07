@@ -170,6 +170,7 @@
 
 ### Creating links
 - `ln` command is used to create links (Hard link by default)
+  - `ln file1 file2` -> Creates a hard link for file1 with the name of file2
 - `ln -s` is used to create soft links
 
 ### Removing links
@@ -417,6 +418,11 @@
 ### Modifying User
 - we could modify user properties with `vipw` or we could use the `usermod` command line utility
 - `usermod -p` -> its tells to use encrypted password for the new password
+- `usermod -L linda` -> Locks the user account
+- `usermod -L -e 2025-12-31 linda` -> Locks the user account until the specified date
+- `usermod -s /bin/bash linda` -> Changes the default shell for the user linda
+  - `chsh linda` -> **interactive** way of changing the default shell
+- `usermod -s /sbin/nologin linda` -> Prevents the user from logging in
 
 - [Go to Modifying groups section](#modifying-groups)
 
@@ -428,8 +434,11 @@
     - `-x` -> Maximum password age
     - `-i` -> Inactive
   - `chage -E 2025-12-31 bob` -> Sets the password expiration date for the user bob
+  - `chage -d 0 bob` -> Forces the user bob to change the password on next login
   - `chage -l bob` -> Displays the password properties for the user bob
   - `chage anna` -> **interactive** way of changing password properties
+
+- `date -d "+90 days" +%F` -> Displays the date after 90 days
 
 ## Creating a user environement
 - When a user logs in, the shell reads the configuration files and sets the environment variables. 
@@ -461,6 +470,7 @@
 ### Creating groups
 - `groupadd` command is used to create groups
   - `groupadd -g 1201 sales` -> Creates a group with group id 1201 and name sales
+  - `groupadd -r sales` -> Creates a system group, which means the group id is less than 1000
 
 - we can also add groups manually using `vigr` which allows us to edit the `/etc/group` file directly, which is rather unsafe
 
@@ -566,6 +576,12 @@
   - alternatively we need to specify this options in `/etc/fstab` file to make the changes permanent
 
 ## Default permissions with umask
+- system default permissions are defined in `/etc/login.defs` file and in the `/etc/bashrc` file
+- users can override the system defaults in `.bash_profile` or `.bashrc` file
+- The root user can change the default umask for interactive non-login shells by adding a local-umask.sh shell startup script in the /etc/profile.d/ directory. 
+- ![localmask](assets/Screenshot%20from%202023-11-07%2017-54-38.png)
+
+
 - `umask` -> User mask, is a value that is **subtracted** from the default permissions
   - the maximum setting for **file** permissions is **666** and for **directories** it's **777**
   - default umask setting is **0022**, which means the default permissions for files is **644** and for directories it's **755**
