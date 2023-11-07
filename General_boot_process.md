@@ -61,7 +61,7 @@
   - some likely changes to troubleshoot are removing the `rhgb` and `quiet` options
   - removing these options will show the boot process in detail
 - After making changes to the **/etc/default/grub** file, we need to run the `grub2-mkconfig` command to generate the **/boot/grub2/grub.cfg** file.
-  - alternative we can remove the options in the boot by pressing `e` and `esc` while booting
+  - alternative we can remove the options in the boot by pressing `e` and `ctrl+x` while booting
 
 - To make the changes permanent, we need to run the `grub2-mkconfig` command with the `-o` option to specify the **/boot/grub2/grub.cfg** file.
   - `grub2-mkconfig -o /boot/grub2/grub.cfg`          -> for a BIOS system
