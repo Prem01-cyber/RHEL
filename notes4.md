@@ -1,3 +1,22 @@
+- [Managing Software Packages with yum](#managing-software-packages-with-yum)
+  - [Specifying which repository to use](#specifying-which-repository-to-use)
+  - [Managing software with rpm](#managing-software-with-rpm)
+- [Managing Storage](#managing-storage)
+  - [Managing Partitions and file systems](#managing-partitions-and-file-systems)
+  - [Creating file sytems](#creating-file-sytems)
+  - [Adding swap partitions](#adding-swap-partitions)
+  - [Mounting file systems](#mounting-file-systems)
+- [Managing Advanced storage](#managing-advanced-storage)
+  - [Logical Volume Manager](#logical-volume-manager)
+    - [Creating LVM Logical Volumes](#creating-lvm-logical-volumes)
+    - [Resizing LVM Logical volumes](#resizing-lvm-logical-volumes)
+  - [Configuring Stratis](#configuring-stratis)
+    - [Understanding Stratis Architecture](#understanding-stratis-architecture)
+  - [Creating Stratis Storage](#creating-stratis-storage)
+    - [Managing Stratis](#managing-stratis)
+  - [Configuring VDO](#configuring-vdo)
+    - [Setting up VDO](#setting-up-vdo)
+
 # Managing Software Packages with yum
 - To separate core os packages from user-space packages RHEL provides two main repositories
   - **BaseOS**   -> contains the core os packages as **rpm packages**
@@ -211,3 +230,151 @@
   - `noauto` -> don't mount the file system automatically
   - `noexec` -> don't allow execution of binaries on the file system
   - `nodev` -> don't allow creation of device files on the file system
+
+# Managing Advanced storage
+- disks aren't flexible enough to meet the needs of modern applications, hence LVM is introduced
+
+## Logical Volume Manager
+- These can be anything
+- the storage devices need to flagged as physical volumes which makes then usable by LVM
+- the actual file systems are created on logical volumes, which makes them flexible
+  - in order to resize the file systems when logical volumes are resized the files must offer support for that
+
+- LVM offer the support of snapshots, by copying the metadata that describes the current file system
+  - snapshots are read-only copies of a logical volume
+  - snapshots are used to create backups of logical volumes
+  - snapshots are also used to create consistent backups of databases
+
+### Creating LVM Logical Volumes
+- LVM involves creating the three layers in the following order
+  - **Physical Volumes (PV)**  -> physical storage devices
+  - **Volume Group (VG)s**     -> collection of physical volumes
+  - **Logical Volumes (LV)**   -> logical partitions that are created on volume groups
+
+1. Create a physical volume with the partition marked as LVM partition
+  - `fdisk <device_name>` -> start fdisk utility
+    - `t`   -> change the partition type
+    - `8e`  -> change the partition type to LVM
+    - `w`   -> write the changes to the disk
+    - `q`   -> quit fdisk utility
+  - `partprobe <device_name>` -> update kernel partition table
+  - `pvcreate <device_name>`  -> create a **physical volume**
+  - `pvs` or `pvdisplay`      -> list all the physical volumes that are available to our system
+
+2. Creating a volume group with the physical volume
+  - `vgcreate <vg_name> <device_name>` -> create a **volume group**
+  - `vgcreate -s <size> <vg_name> <device_name>` -> create a **volume group** with specific size, default size is **4MB** and maximum size is **128MB**
+  - `vgs` or `vgdisplay`               -> list all the volume groups that are available to our system
+
+3. Creating logical volumes and file systems
+  - `lvcreate -L <size> -n <lv_name> <vg_name>` -> create a **logical volume** with specifc size
+    - `lvcreate -L 1G -n lv1 vg1` -> create a **logical volume** with 1GB size
+  - `lvcreate -l <size> -n <lv_name> <vg_name>` -> create a **logical volume** with relative size
+    - `lvcreate -l 100%FREE -n lv1 vg1` -> create a **logical volume** to use of all of the available space in the volume group
+  - `lvs` or `lvdisplay` -> list all the logical volumes that are available to our system
+  - `mkfs -t <fs_type> <lv_path>` -> format a logical volume
+    - `mkfs.xfs <lv_path>` -> format a logical volume with XFS filesystem
+    - `mkfs.ext4 <lv_path>` -> format a logical volume with EXT4 filesystem
+
+- LVM volume devices name can be multiple ways, but the most common way is `/dev/<vg_name>/<lv_name>`
+- for naming LVM volumes another system plays a role called device mapper, Kernel uses to address storage devices
+  - it creates meaningless names like `/dev/dm-0` and `/dev/dm-1`, for easier access device mapper creates symbolic links in `/dev/mapper/` directory
+
+### Resizing LVM Logical volumes
+
+4. Resizing volume groups
+  - `vgextend <vg_name> <device_name>` -> add a physical volume to a volume group
+  - `vgreduce <vg_name> <device_name>` -> remove a physical volume from a volume group
+  - after extending a volume group we now can extend the logical volume
+  - `lvresize -L +1G -r <lv_path>` -> resize the file system used on it as well
+    - `lvresize -L +1G -r /dev/vg1/lv1` -> resize the logical volume by 1GB and resize the file system used on it as well
+    - `lvresize -l +100%FREE -r /dev/vg1/lv1` -> resize the logical volume to use all of the available space in the volume group and resize the file system used on it as well
+  - `lvextend -L +1G -r <lv_path>` -> extend the logical volume by 1GB and resize the file system used on it as well
+    - `lvextend -L +1G -r /dev/vg1/lv1` -> extend the logical volume by 1GB and resize the file system used on it as well
+    - `lvextend -l +100%FREE -r /dev/vg1/lv1` -> extend the logical volume to use all of the available space in the volume group and resize the file system used on it as well
+
+- the size of XFS file system can't be decreased it can only be inceresed
+- inorder to have a file system that can be shrunk in size we use EXT4 file system
+
+## Configuring Stratis
+- There are two advanced storage types, whcich are called as volume manament system
+  - **Stratis**
+  - **VDO** 
+
+- There are many advantages with stratis
+  - **Thin Provisioning** -> enables a stratis file to present itself to users as much bigger than it really is
+    - virtual desktops see 20GB of storage space, although much lower amoutn is actually provisioned to each user
+  - **Snapshots** -> enables to create snapshots of file systems, which has current state of file system
+  - **Cache tier** -> **Ceph** storage feature that ensures that data can stored physically closer to the Ceph clients which makes the access faster
+  - **Programming API** -> API ensures that storage can be managed programmatically
+  - **Monitoring and repair** -> old systems require tools like `frisk`, stratis has built-in monitoring and repair tools
+
+### Understanding Stratis Architecture
+- lowest layer in the stratis architecture is the **pool**
+- from a functional perspective stratis pool is comparable to LVM volume group
+- it represents all available storage and consists of one or more **physical volumes**
+- Stratis environment is referred to as **blockdev**, these block devices may no t be thin provisioned at the underlying hardware level
+- Stratis creates a `/dev/stratis` poolname directory for each pool
+- from stratis pool XFS file systems are created, stratis only works with XFS file systems 
+- the XFS file systems it uses is integrated with the Stratis Volume, which means that the file system can be resized when the pool is resized
+
+## Creating Stratis Storage
+- Creating a stratis Volume
+  1. Start be creating a pool
+  2. Create a file system on the pool
+
+- We need make sure that the block devices we use in stratis have a minimal size of `1GB`
+- each stratis file system occupies a minimum of 527MB of space even if it's empty
+
+- `yum install stratisd stratis-cli` -> install stratisd and stratis-cli packages
+- `systemctl enable --now stratisd` -> enable and start stratisd service
+- `stratis pool create` -> create a stratis pool
+  - `stratis pool create <pool_name> <device_name>` -> create a stratis pool
+  - `stratis pool list` -> list all the stratis pools that are available to our system
+  - `stratis pool add-data <pool_name> <device_name>` -> add a physical volume to a stratis pool
+  - `stratis pool remove-data <pool_name> <device_name>` -> remove a physical volume from a stratis pool
+  - `stratis pool destroy <pool_name>` -> destroy a stratis pool
+- `stratis fs create` -> create a stratis file system
+  - `stratis fs create <pool_name> <fs_name>` -> create a stratis file system
+  - `stratis fs list` -> list all the stratis file systems that are available to our system
+  - `stratis fs destroy <fs_name>` -> destroy a stratis file system
+- after the creating the file system you can mount it
+  - to mount stratis file system through `/etc/fstab` you must use the UUID using `blkid` command
+  - we must add the mount option as `x-systemd.requires=stratisd.service` to make sure that the stratisd service is started before the file system is mounted
+
+### Managing Stratis
+- after the creation of stratis file system we can perform server different management tasks
+- `stratis blockdev` -> list all the block devices that are available to our system
+  - `stratis blockdev list-pools` -> list all the stratis pools that are available to our system
+- `stratis pool` -> gives info about stratis pools
+- `stratis fs` -> gives info about stratis file systems
+
+- we can also manage snapshots using stratis that contains the file system metadata
+
+## Configuring VDO
+- VDO stands for **Virtual Data Optimizer**, a solution that was developed to offer data deduplication features
+- was developed to reduce disk space usage on block devices by removing duplicate copies of data
+- VDO creates volumes, implements data deduplication and compression on any type of existing block device (`blkid`)
+- It performs deduplication using
+  - **Zero block elimination** -> removes blocks that contain only zeros
+  - **deduplication** removes dublicate blocks of data
+  - **Compression** occurs when kvdo kernel module compress data blocks
+
+- VDO is typically used in host systems that run virtual machines, where the deduplication engine ensures much more disk storage use.
+
+### Setting up VDO
+- `yum install vdo kmod-vdo` -> install vdo package
+- `vdo create` -> create a vdo volume
+  - `vdo create --name=<vdo_name> --device=<device_name> --vdoLogicalSize=<size>` -> create a vdo volume
+    - `vdo create --name=vdo1 --device=/dev/sdb --vdoLogicalSize=10G` -> create a vdo volume
+  - `vdo list` -> list all the vdo volumes that are available to our system
+  - `vdo remove <vdo_name>` -> remove a vdo volume
+- after creating VDO we need to put a file system on top
+- `mkfs.xfs -K /dev/mapper/vdo1` -> format a vdo volume with XFS file system
+  - `-K` -> don't use the discard option, prevents unused blocks in file system from being discarded
+- to make the mount permanent we need to add the vdo volume to the `/etc/fstab` file
+  - we need to make sure to include the mount options `x-systemd.requires=vdo.service,discard` to make sure that the vdo service is started before the file system is mounted
+- `vdostats --human-readable` -> gives info about vdo volumes
+
+- we need to copy the sample mount unit file form `/usr/share/doc/vdo/example/systemd/VDO.mount.example` to `/etc/systemd/system/` directory
+- we need to change the `what` and `where` based of the requirements. and upon reboot the vdo volume will be mounted automatically
